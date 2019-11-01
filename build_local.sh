@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t apache2-php-fpm-ioncube .
+docker build -t taenzerdigital/apache2-php-fpm-ioncube:latest .

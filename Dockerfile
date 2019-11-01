@@ -170,6 +170,7 @@ RUN set -eux; \
 		--with-openssl \
 		--with-zlib \
 		--enable-opcache \
+		--enable-bcmath \
 		\
 # bundled pcre does not support JIT on s390x
 # https://manpages.debian.org/stretch/libpcre3-dev/pcrejit.3.en.html#AVAILABILITY_OF_JIT_SUPPORT
@@ -273,6 +274,7 @@ RUN php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filenam
 RUN apt-get update && apt-get install -y \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
+        libjpeg-dev \
         libmcrypt-dev \
         libpng-dev \
         libxml2-dev \
@@ -281,9 +283,15 @@ RUN apt-get update && apt-get install -y \
         libzip-dev \
         libc-client-dev \
         libkrb5-dev \
+        imagemagick \
+        libmagickcore-dev \
+        libmagickwand-dev \
         wget
 
 RUN rm -r /var/lib/apt/lists/*
+
+RUN printf "\n" | pecl install imagick
+RUN docker-php-ext-enable imagick
 
 # Install php modules
 RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl
@@ -293,7 +301,7 @@ RUN docker-php-ext-install gd pdo pdo_mysql zip iconv soap mysqli intl imap xmlr
 RUN docker-php-ext-enable mysqli intl imap
 
 # Configure php modules
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
 
 RUN cd /tmp \
 	&& curl -o ioncube.tar.gz http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
