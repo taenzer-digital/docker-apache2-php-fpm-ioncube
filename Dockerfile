@@ -273,7 +273,6 @@ RUN php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filenam
 
 RUN apt-get update && apt-get install -y \
         libfreetype6-dev \
-        libjpeg62-turbo-dev \
         libjpeg-dev \
         libmcrypt-dev \
         libpng-dev \
@@ -295,13 +294,13 @@ RUN docker-php-ext-enable imagick
 
 # Install php modules
 RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl
-RUN docker-php-ext-install gd pdo pdo_mysql zip iconv soap mysqli intl imap xmlrpc
+RUN docker-php-ext-install pdo pdo_mysql zip iconv soap mysqli intl imap xmlrpc
 
 # Enable php modules
 RUN docker-php-ext-enable mysqli intl imap
 
 # Configure php modules
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ && docker-php-ext-install gd
 
 RUN cd /tmp \
 	&& curl -o ioncube.tar.gz http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
