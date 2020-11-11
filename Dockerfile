@@ -1,10 +1,10 @@
-FROM debian:stretch
+FROM debian:buster
 MAINTAINER Sebastian Tänzer <st@taenzer.de>
 WORKDIR /usr/local/src
 
 RUN apt-get update
 RUN apt-get install -y apt-utils
-RUN apt-get install -y sudo sed locales build-essential curl apache2 libssl-dev libssl1.1 libssl1.0.2 openssl supervisor
+RUN apt-get install -y sudo sed locales build-essential curl apache2 libssl-dev libssl1.1 openssl supervisor dbench
 RUN /bin/sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen && /usr/sbin/locale-gen
 RUN a2enmod http2 headers proxy proxy_fcgi proxy_http rewrite setenvif unique_id ssl mime env dir deflate alias
 
@@ -59,11 +59,11 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
-ENV GPG_KEYS CBAF69F173A0FEA4B537F470D66C9593118BCCB6 F38252826ACD957EF380D39F2F7956BC5DA04B5D
+ENV GPG_KEYS 42670A7FE4D0441C8E4632349E4FDC074A4EF02D 5A52880781F755608BF815FC910DEB46F53EA312
 
-ENV PHP_VERSION 7.3.6
-ENV PHP_URL="https://www.php.net/get/php-7.3.6.tar.xz/from/this/mirror" PHP_ASC_URL="https://www.php.net/get/php-7.3.6.tar.xz.asc/from/this/mirror"
-ENV PHP_SHA256="fefc8967daa30ebc375b2ab2857f97da94ca81921b722ddac86b29e15c54a164" PHP_MD5=""
+ENV PHP_VERSION 7.4.10
+ENV PHP_URL="https://www.php.net/get/php-7.4.10.tar.xz/from/this/mirror" PHP_ASC_URL="https://www.php.net/get/php-7.4.10.tar.xz.asc/from/this/mirror"
+ENV PHP_SHA256="c2d90b00b14284588a787b100dee54c2400e7db995b457864d66f00ad64fb010" PHP_MD5=""
 
 RUN set -eux; \
 	\
@@ -104,18 +104,6 @@ COPY docker-php-source /usr/local/bin/
 RUN set -eux; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
-##<argon2-stretch>##
-	sed -e 's/stretch/buster/g' /etc/apt/sources.list > /etc/apt/sources.list.d/buster.list; \
-	{ \
-		echo 'Package: *'; \
-		echo 'Pin: release n=buster'; \
-		echo 'Pin-Priority: -10'; \
-		echo; \
-		echo 'Package: libargon2*'; \
-		echo 'Pin: release n=buster'; \
-		echo 'Pin-Priority: 990'; \
-	} > /etc/apt/preferences.d/argon2-buster; \
-##</argon2-stretch>##
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		libargon2-dev \
@@ -126,6 +114,7 @@ RUN set -eux; \
 		libssl-dev \
 		libxml2-dev \
 		zlib1g-dev \
+		libonig-dev \
 		${PHP_EXTRA_BUILD_DEPS:-} \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
@@ -171,6 +160,7 @@ RUN set -eux; \
 		--with-zlib \
 		--enable-opcache \
 		--enable-bcmath \
+		--with-pear \
 		\
 # bundled pcre does not support JIT on s390x
 # https://manpages.debian.org/stretch/libpcre3-dev/pcrejit.3.en.html#AVAILABILITY_OF_JIT_SUPPORT
@@ -291,6 +281,8 @@ RUN rm -r /var/lib/apt/lists/*
 
 RUN printf "\n" | pecl install imagick
 RUN docker-php-ext-enable imagick
+RUN printf "\n" | pecl install xdebug
+RUN docker-php-ext-enable xdebug
 
 # Install php modules
 RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl
@@ -317,7 +309,7 @@ RUN php wp-cli.phar --info
 RUN chmod +x wp-cli.phar
 RUN mv wp-cli.phar /usr/local/bin/wp
 
-WORKDIR /var/www
+WORKDIR /src
 
 EXPOSE 80 443
 COPY supervisord.conf /etc/supervisor/conf.d/php-fpm.conf
